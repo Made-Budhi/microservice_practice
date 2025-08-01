@@ -1,0 +1,6 @@
+./product_service/.env
+./transaction__service/.env
+./user_service/.env
+./product_service/node_modules
+./transaction_service/node_modules
+./user_service/node_modules
