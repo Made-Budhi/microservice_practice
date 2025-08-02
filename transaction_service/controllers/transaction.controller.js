@@ -26,26 +26,73 @@ exports.create = async (req, res) => {
   try {
     const { userId, productId, quantity } = req.body;
 
-    // Panggil user_service & product_service
-    const user = await userService.getUserById(userId);
-    const product = await productService.getProductById(productId);
+    if (quantity < 1) {
+      return res.status(400).json({ error: 'Quantity must be greater than 0.' });
+    }
+    // Call user service.
+    // This will throw an error if the user is not found.
+    await userService.getUserById(userId);
 
-    if (!user || !product) {
-      return res.status(400).json({ error: 'User atau Product tidak valid' });
+    // Call product service.
+    let product = await productService.getProductById(productId);
+    product = product.dataValues;
+
+    console.log("Product before ", product);
+
+    // Get price variable
+    let price = product.price;
+
+    // Calculate total price
+    const totalPrice = price * quantity;
+
+    // Stock and quantity checking
+    if (product.stock < quantity || product.stock - quantity < 0) {
+      return res.status(400).json({ error: 'Insufficient stock.' });
     }
 
-    const totalPrice = product.price * quantity;
-
-    const transaction = await Transaction.create({
+    let transaction = await Transaction.create({
       userId,
       productId,
       quantity,
       totalPrice
     });
 
+    transaction = transaction.dataValues;
+
+    // Reduce the amount of product in stock
+    await productService.stockChange(productId, quantity);
+
+    console.log("Transaction Created", transaction);
     res.status(201).json(transaction);
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    if (err.isAxiosError) {
+      // This means the error came from an axios (HTTP) call to another service
+      if (err.response) {
+        // The other service responded with an error (e.g., 404, 500)
+        console.error("ERROR RESPONSE FROM DEPENDENT SERVICE:", err.response.data);
+        return res.status(500).json({
+          message: "A dependent service returned an error.",
+          service: err.config.url, // Tells you which service failed
+          error: err.response.data
+        });
+      } else if (err.request) {
+        // The request was made, but no response was received (service is down)
+        console.error("NO RESPONSE FROM DEPENDENT SERVICE:", err.config.url);
+        return res.status(500).json({
+          message: "No response from a dependent service. It might be down.",
+          service: err.config.url,
+          error: err.message
+        });
+      }
+    }
+
+    // If it's not an Axios error, it's an internal database or logic error
+    console.error("INTERNAL SERVER ERROR:", err);
+    return res.status(500).json({
+      message: "An internal server error occurred.",
+      error: err.message
+    });
   }
 };
 
