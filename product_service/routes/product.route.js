@@ -17,4 +17,7 @@ router.put('/:id', productController.update);
 // DELETE produk
 router.delete('/:id', productController.remove);
 
+// PUT update stock
+router.put('/update-stock/:id', productController.stockChange);
+
 module.exports = router;
