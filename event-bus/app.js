@@ -6,6 +6,7 @@ const app = express();
 // Routes import
 const productRoutes = require('./routes/product.route');
 const userRoutes = require('./routes/user.route');
+const transactionRoutes = require('./routes/transaction.route');
 
 // Environment variables
 require('dotenv').config();
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use(userRoutes);
 app.use(productRoutes);
+app.use(transactionRoutes);
 
 app.get("/", (req, res) => res.send("Successfully called this api"));
 

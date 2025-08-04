@@ -5,6 +5,7 @@ const router = express.Router();
 const axios = require('axios');
 
 const TransactionServiceApi = process.env.TRANSACTION_SERVICE_API;
+const ListTransactionServiceApi = process.env.LIST_TRANSACTION_SERVICE_API;
 const productServiceApi = process.env.PRODUCT_SERVICE_API;
 const BASE_URL = '/api/events';
 
@@ -18,6 +19,7 @@ router.post(`${BASE_URL}/create-product`, async (req, res) => {
     console.log(data);
     try {
         await axios.post(`${TransactionServiceApi}/api/events/create-product`, data);
+        await axios.post(`${ListTransactionServiceApi}/api/events/create-product`, data);
         res.send({ status: 'OK Event submitted' });
     } catch (error) {
         res.status(500).json({ error: error.message + ` from ${BASE_URL}/create-product endpoint.` });

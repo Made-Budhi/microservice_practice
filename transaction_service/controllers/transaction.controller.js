@@ -2,6 +2,7 @@ const db = require('../models');
 const Transaction = db.Transaction;
 const userService = require('../services/user.service');
 const productService = require('../services/product.service');
+const axios = require("axios");
 
 exports.getAll = async (req, res) => {
   try {
@@ -37,6 +38,11 @@ exports.create = async (req, res) => {
     let product = await productService.getProductById(productId);
     product = product.dataValues;
 
+    // Stock and quantity checking
+    if (product.stock < quantity || product.stock - quantity < 0) {
+      return res.status(400).json({ error: 'Insufficient stock.' });
+    }
+
     console.log("Product before ", product);
 
     // Get price variable
@@ -44,11 +50,6 @@ exports.create = async (req, res) => {
 
     // Calculate total price
     const totalPrice = price * quantity;
-
-    // Stock and quantity checking
-    if (product.stock < quantity || product.stock - quantity < 0) {
-      return res.status(400).json({ error: 'Insufficient stock.' });
-    }
 
     let transaction = await Transaction.create({
       userId,
@@ -59,6 +60,8 @@ exports.create = async (req, res) => {
 
     transaction = transaction.dataValues;
 
+    // Trigger event bus to create a duplicate of the transaction data in the list transaction database
+    await axios.post(`${process.env.EVENT_BUS_API}/create-transaction`, transaction)
     // Reduce the amount of product in stock
     await productService.stockChange(productId, quantity);
 

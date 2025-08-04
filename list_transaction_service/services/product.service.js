@@ -42,10 +42,6 @@ exports.stockChange = async (id, quantity) => {
       throw new Error(`Product with ID ${id} not found.`);
     }
 
-    // Trigger the event bus with the change in quantity.
-    // This is more robust than sending the new total.
-    await axios.post(`${eventBusApi}/update-stock/${id}`, {quantity});
-
     console.log(`Stock for product ${id} successfully updated.`);
 
   } catch (err) {
